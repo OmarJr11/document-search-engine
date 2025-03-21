@@ -21,7 +21,7 @@ texto_procesado = processor.preprocess_text(texto_pdf)
 
 # Guardar el texto procesado en un archivo .txt
 # Ruta del archivo de salida procesada
-processed_output_path = "./salida_procesada.txt"
+processed_output_path = "./processed_files/salisa_procesada.txt"
 with open(processed_output_path, "w", encoding="utf-8") as file:
     file.write(texto_procesado)
 
