@@ -25,6 +25,8 @@ class PDFProcessor:
     # Devuelve el texto completo del PDF como una cadena.
 
     def extract_text(self, pdf_path):
+        print(f"Extrayendo texto de: {pdf_path}")
+        # Abrir el PDF
         doc = fitz.open(pdf_path)
         text = " ".join([
             page.get_text("text") for page in doc
