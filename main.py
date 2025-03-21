@@ -5,7 +5,7 @@ from pdf_processor import PDFProcessor
 processor = PDFProcessor()
 
 # Ruta del archivo PDF (asegúrate de reemplazar esto con la ruta real de tu archivo PDF)
-pdf_path = "./archivos/001.pdf"
+pdf_path = "./files/001.pdf"
 
 # Extraer texto del PDF
 texto_pdf = processor.extract_text(pdf_path)

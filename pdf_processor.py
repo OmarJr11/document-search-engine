@@ -26,7 +26,9 @@ class PDFProcessor:
 
     def extract_text(self, pdf_path):
         doc = fitz.open(pdf_path)
-        text = " ".join([page.get_text() for page in doc])
+        text = " ".join([
+            page.get_text("text") for page in doc
+        ])
         return text
 
     """
