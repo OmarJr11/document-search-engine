@@ -12,7 +12,7 @@ texto_pdf = processor.extract_text(pdf_path)
 
 # Guardar el texto extraído sin procesar en un archivo .txt
 # Ruta del archivo de entrada sin procesar
-raw_output_path = "./archivos/entrada_sin_procesar.txt"
+raw_output_path = "./entrada_sin_procesar.txt"
 with open(raw_output_path, "w", encoding="utf-8") as file:
     file.write(texto_pdf)
 
@@ -21,7 +21,7 @@ texto_procesado = processor.preprocess_text(texto_pdf)
 
 # Guardar el texto procesado en un archivo .txt
 # Ruta del archivo de salida procesada
-processed_output_path = "./archivos/salida_procesada.txt"
+processed_output_path = "./salida_procesada.txt"
 with open(processed_output_path, "w", encoding="utf-8") as file:
     file.write(texto_procesado)
 
