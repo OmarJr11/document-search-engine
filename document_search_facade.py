@@ -1,3 +1,7 @@
+from document_indexer import DocumentIndexer
+from pdf_processor import PDFProcessor
+
+
 class DocumentSearchFacade:
     """ Fachada que centraliza la extracción, preprocesamiento, indexación y búsqueda """
 

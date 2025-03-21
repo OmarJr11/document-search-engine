@@ -1,30 +1,20 @@
-# Importa la clase desde pdf-processor.py
-from pdf_processor import PDFProcessor
+from document_search_facade import DocumentSearchFacade
 
-# Crear una instancia de PDFProcessor
-processor = PDFProcessor()
+if __name__ == "__main__":
+    # Instanciamos la Fachada
+    facade = DocumentSearchFacade()
 
-# Ruta del archivo PDF (asegúrate de reemplazar esto con la ruta real de tu archivo PDF)
-pdf_path = "./files/001.pdf"
+    # Lista de documentos PDF (Asegúrate de tener estos archivos en el mismo directorio)
+    pdf_files = ["./files/001.pdf", "./files/002.pdf", "./files/003.pdf"]
 
-# Extraer texto del PDF
-texto_pdf = processor.extract_text(pdf_path)
+    # Procesamos e indexamos los documentos
+    facade.add_documents(pdf_files)
 
-# Guardar el texto extraído sin procesar en un archivo .txt
-# Ruta del archivo de entrada sin procesar
-raw_output_path = "./entrada_sin_procesar.txt"
-with open(raw_output_path, "w", encoding="utf-8") as file:
-    file.write(texto_pdf)
+    # Realizamos una consulta
+    consulta = "inteligencia artificial en PYMEs"
+    resultados = facade.search_documents(consulta)
 
-# Preprocesar el texto extraído
-texto_procesado = processor.preprocess_text(texto_pdf)
-
-# Guardar el texto procesado en un archivo .txt
-# Ruta del archivo de salida procesada
-processed_output_path = "./processed_files/salisa_procesada.txt"
-with open(processed_output_path, "w", encoding="utf-8") as file:
-    file.write(texto_procesado)
-
-# Imprimir mensajes de confirmación
-print(f"El texto sin procesar se ha guardado en: {raw_output_path}")
-print(f"El texto procesado se ha guardado en: {processed_output_path}")
+    # Mostramos los documentos más relevantes
+    print("\nDocumentos relevantes:")
+    for doc, score in resultados:
+        print(f"Score: {score:.4f} - {doc[:200]}...")
