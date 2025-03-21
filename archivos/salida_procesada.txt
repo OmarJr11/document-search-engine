@@ -1,0 +1,102 @@
+electivo recuperación recomendación información 
+ feb-2025 
+ facyt 
+ 
+ implementar buscador documento crear pequeño buscador recuperar 
+ documento relevante consulta 
+ 
+ actividad 
+ 1 preprocesamiento documento pdf elegir conjunto documento formato 
+ pdf  
+ utilizar biblioteca python pymupdf pdfplumber extraer texto  
+ aplicar técnica limpieza   eliminación caracter especial conversión 
+ minúscula eliminación stopword español tokenización lematización 
+ usar spacy nltk 
+ guardar resultado archivo texto procesado 
+ 2 implementar modelo búsqueda representación vectorial documento 
+ basar él tf-idf bm25 word2vec 
+ 3 permitir usuario ingrese consulta lenguaje natural 
+ 4 retornar documento relevante ordenado puntaje similitud comparar 
+ documento calcular similitud métrica coseno permitir 
+ aplicación recomiendir documento similar seleccionado 
+ 5 evaluar calidad recomendación métrica 
+ 6 crear interfaz sencillo jupyter notebook streamlit fllask 
+ 
+ 7 entregar informe código captura pantalla conclusión 
+ 
+ 3 grupo grupo escoger siguiente método clustering k-mean 
+ dbscar hierarchical clustering etc 
+ recomendación 
+  
+ librería spacy nltk scikit-learn panda numpy matplotlib seaborn scipy gensim 
+ streamlit 
+  
+ dataset sugerido artículo académico noticia paper arxiv documento 
+ institucional 
+  
+ utilizar kdd  
+ 
+ 
+  electivo recuperación recomendación información 
+ feb-2025 
+ facyt 
+ 
+ comparación algoritmo 
+ algoritmo 
+ necesitar definir cluster manejar densidad computacionalmente eficiente forma clusters adecuado 
+ k-means 
+   
+   
+   rápido 
+   esférico 
+ dbscar 
+   
+   
+   rápido 
+   forma 
+ hierarchical clustering    
+   
+   lento 
+   forma 
+ mean-shift 
+   
+   
+   lento 
+   forma 
+ gmm 
+   
+   
+   lento 
+   elíptico 
+ affinity propagation 
+   
+   
+   lento 
+   forma 
+ optics 
+   
+   
+   lento 
+   forma 
+ spectral clustering 
+   
+   
+   lento 
+   forma 
+ 
+ elegir 
+ 
+ dato clusters separado esférico    k-mean 
+ 
+ cluster forma irregular densidad variable    dbscar optics 
+ 
+ cluster    mean-shift affinity propagation dbscar 
+ 
+ dato estructura complejo    spectral clustering 
+ 
+ probabilidad asignación cluster    gmm 
+ 
+ fecha entrega 28/03/2025 
+ 
+ 
+ 
