@@ -31,7 +31,8 @@ class PDFProcessor:
         text = " ".join([
             page.get_text("text") for page in doc
         ])
-        return text
+        text = text.encode("ascii", "ignore").decode("ascii")
+        return text.replace("\n", " ")
 
     """
         Este método procesa el texto extraído del PDF. Convierte el texto a minúsculas, elimina las palabras vacías (stopwords) y aplica lematización para reducir las palabras a su forma base.
