@@ -2,6 +2,7 @@ import streamlit as st
 from classes.document_search_facade import DocumentSearchFacade
 from classes.pdf_processor import PDFProcessor
 from functions import process_text
+from functions.evaluation import evaluate_recommendations, ndcg
 
 # Instanciar la fachada y el procesador de PDFs
 facade = DocumentSearchFacade()
@@ -44,6 +45,12 @@ if "clusters" not in st.session_state:
     st.session_state["clusters"] = None
 if "clustered_documents" not in st.session_state:
     st.session_state["clustered_documents"] = {}
+if "recomendaciones" not in st.session_state:
+    st.session_state["recomendaciones"] = []
+if "recommended_docs" not in st.session_state:
+    st.session_state["recommended_docs"] = []
+if "relevant_docs" not in st.session_state:
+    st.session_state["relevant_docs"] = []
 
 if st.button("Buscar"):
     if consulta.strip():
@@ -113,6 +120,9 @@ if st.session_state["opciones"]:
                 if st.session_state["document_matrix"].shape[0] > 0:
                     recomendaciones = facade.recommend_similar_documents(
                         selected_doc)
+                    # Guardar las recomendaciones en el estado de la sesión
+                    st.session_state["recomendaciones"] = recomendaciones
+
                     st.subheader("Documentos similares:")
                     if recomendaciones:
                         for similar_doc, similarity_score in recomendaciones:
@@ -127,6 +137,55 @@ if st.session_state["opciones"]:
             else:
                 st.error(
                     "Los datos necesarios no están disponibles. Por favor, realiza una búsqueda primero.")
+
+        # Evaluar las recomendaciones
+        if st.button("Evaluar recomendaciones"):
+            # Verificar si hay recomendaciones disponibles
+            if "recomendaciones" in st.session_state:
+                recomendaciones = st.session_state["recomendaciones"]
+
+                # Obtener los documentos procesados
+                processed_documents = st.session_state["processed_documents"]
+
+                # Consulta actual
+                query = consulta.lower()
+
+                # Definir documentos relevantes basados en reglas
+                relevant_docs = [
+                    doc for doc in processed_documents if query in doc.lower()]
+                # Guardar en session_state
+                st.session_state["relevant_docs"] = relevant_docs
+
+                # Extraer solo los textos de los documentos recomendados
+                recommended_docs = [doc for doc, _ in recomendaciones]
+                # Guardar en session_state
+                st.session_state["recommended_docs"] = recommended_docs
+
+                # Evaluar las recomendaciones
+                metrics = evaluate_recommendations(
+                    recommended_docs, relevant_docs)
+
+                # Mostrar las métricas
+                st.subheader("Evaluación de las recomendaciones:")
+                st.write(f"**Precisión:** {metrics['precision']:.4f}")
+                st.write(f"**Cobertura:** {metrics['recall']:.4f}")
+                st.write(f"**F1-Score:** {metrics['f1_score']:.4f}")
+            else:
+                st.warning(
+                    "No hay recomendaciones disponibles para evaluar. Por favor, busca documentos similares primero.")
+
+        # Evaluar NDCG
+        if st.button("Evaluar NDCG"):
+            if "recommended_docs" in st.session_state and "relevant_docs" in st.session_state:
+                recommended_docs = st.session_state["recommended_docs"]
+                relevant_docs = st.session_state["relevant_docs"]
+
+                # Calcular NDCG
+                ndcg_score = ndcg(recommended_docs, relevant_docs, k=10)
+                st.write(f"**NDCG:** {ndcg_score:.4f}")
+            else:
+                st.warning(
+                    "No hay datos disponibles para calcular NDCG. Por favor, evalúa las recomendaciones primero.")
 
 # Sección para mostrar estadísticas de clusters
 st.header("Estadísticas de Clusters")
