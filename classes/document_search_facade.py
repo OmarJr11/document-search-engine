@@ -1,5 +1,6 @@
 import os
 import re
+import streamlit as st
 from sklearn.cluster import KMeans
 from classes.document_indexer import DocumentIndexer
 from classes.pdf_processor import PDFProcessor
@@ -14,7 +15,7 @@ class DocumentSearchFacade:
         self.indexer = DocumentIndexer()
         self.processed_documents = []
         self.clusters = None  # Para almacenar los clusters
-        self.num_clusters = 6  # Número de clusters (puedes ajustarlo)
+        self.num_clusters = 8  # Número de clusters (puedes ajustarlo)
 
     def add_documents(self, processed_folder_path="./processed_files"):
         """
@@ -36,10 +37,22 @@ class DocumentSearchFacade:
                 # Agregar el texto procesado (cadena) a la lista de documentos procesados
                 self.processed_documents.append(processed_text)
 
-        # Indexar los documentos procesados
-        self.indexer.index_documents(self.processed_documents)
-        # Realizar clustering
-        self.perform_clustering()
+        # Verificar si hay documentos procesados
+        if not self.processed_documents:
+            raise ValueError(
+                "No se encontraron documentos procesados para indexar.")
+
+        # Ajustar el vectorizador TF-IDF con los documentos procesados
+        self.indexer.vectorizer.fit(self.processed_documents)
+
+        # Crear la matriz de documentos
+        self.indexer.document_matrix = self.indexer.vectorizer.transform(
+            self.processed_documents)
+
+        # Guardar el vectorizador y la matriz en el estado de la sesión
+        st.session_state["vectorizer"] = self.indexer.vectorizer
+        st.session_state["document_matrix"] = self.indexer.document_matrix
+        st.session_state["processed_documents"] = self.processed_documents
 
     def perform_clustering(self):
         """
@@ -55,7 +68,8 @@ class DocumentSearchFacade:
         self.clustered_documents = {i: [] for i in range(n_clusters)}
         for idx, cluster_id in enumerate(self.clusters):
             self.clustered_documents[cluster_id].append(
-                self.processed_documents[idx])
+                self.processed_documents[idx]
+            )
 
     def search_documents(self, query, threshold=0.02):
         """
@@ -133,3 +147,38 @@ class DocumentSearchFacade:
             text = re.sub(
                 f"(?i)({keyword})", rf"<span style='color: {color};'>\1</span>", text)
         return text
+
+    def recommend_similar_documents(self, selected_document, threshold=0.1):
+        """
+        Recomienda documentos similares al documento seleccionado.
+        Calcula la similitud de coseno entre el documento seleccionado y todos los demás documentos.
+        Filtra los resultados para aquellos cuya similitud sea mayor al umbral.
+        """
+        # Verificar si el vectorizador y la matriz están en el estado de la sesión
+        if "vectorizer" not in st.session_state or "document_matrix" not in st.session_state:
+            raise ValueError(
+                "El vectorizador TF-IDF o la matriz de documentos no están disponibles.")
+
+        vectorizer = st.session_state["vectorizer"]
+        document_matrix = st.session_state["document_matrix"]
+        processed_documents = st.session_state["processed_documents"]
+
+        # Vectorizar el documento seleccionado
+        selected_vector = vectorizer.transform([selected_document])
+
+        # Calcular la similitud de coseno con todos los documentos
+        similarities = cosine_similarity(
+            selected_vector, document_matrix).flatten()
+
+        # Ordenar los documentos por puntaje de similitud (de mayor a menor)
+        similar_indices = similarities.argsort()[::-1]
+
+        # Excluir el documento seleccionado y filtrar por umbral
+        similar_documents = [
+            (processed_documents[i], similarities[i])
+            for i in similar_indices
+            if processed_documents[i] != selected_document and similarities[i] >= threshold
+        ]
+
+        # Retornar todos los documentos similares que cumplen con el umbral
+        return similar_documents
