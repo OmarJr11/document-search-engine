@@ -1,10 +1,10 @@
 import os
 import re
 import streamlit as st
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
+from sklearn.metrics.pairwise import cosine_similarity
 from classes.document_indexer import DocumentIndexer
 from classes.pdf_processor import PDFProcessor
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 class DocumentSearchFacade:
@@ -15,7 +15,8 @@ class DocumentSearchFacade:
         self.indexer = DocumentIndexer()
         self.processed_documents = []
         self.clusters = None  # Para almacenar los clusters
-        self.num_clusters = 8  # Número de clusters (puedes ajustarlo)
+        self.eps = 0.8  # Radio de vecindad para DBSCAN
+        self.min_samples = 2  # Número mínimo de puntos para formar un cluster
 
     def add_documents(self, processed_folder_path="./processed_files"):
         """
@@ -56,22 +57,35 @@ class DocumentSearchFacade:
 
     def perform_clustering(self):
         """
-        Realiza clustering de los documentos indexados usando K-Means.
+        Realiza clustering de los documentos indexados usando DBSCAN.
         """
+        if not self.processed_documents:
+            raise ValueError(
+                "No hay documentos procesados para realizar clustering.")
+
         tfidf_matrix = self.indexer.document_matrix
-        # Ajustar el número de clusters
-        n_clusters = min(self.num_clusters, max(2, tfidf_matrix.shape[0] // 2))
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        self.clusters = kmeans.fit_predict(tfidf_matrix)
+
+        # Configurar y ajustar DBSCAN
+        dbscan = DBSCAN(
+            eps=self.eps, min_samples=self.min_samples, metric="cosine")
+        self.clusters = dbscan.fit_predict(tfidf_matrix)
 
         # Asociar documentos a clusters
-        self.clustered_documents = {i: [] for i in range(n_clusters)}
+        self.clustered_documents = {}
         for idx, cluster_id in enumerate(self.clusters):
+            if cluster_id == -1:
+                # Ignorar puntos etiquetados como ruido
+                continue
+            if cluster_id not in self.clustered_documents:
+                self.clustered_documents[cluster_id] = []
             self.clustered_documents[cluster_id].append(
-                self.processed_documents[idx]
-            )
+                self.processed_documents[idx])
 
-    def search_documents(self, query, threshold=0.02):
+        # Guardar los clusters en el estado de la sesión
+        st.session_state["clusters"] = self.clusters
+        st.session_state["clustered_documents"] = self.clustered_documents
+
+    def search_documents(self, query, threshold=0.009):
         """
         Realiza una búsqueda en los documentos más relevantes basados en clustering.
         """
@@ -83,9 +97,15 @@ class DocumentSearchFacade:
             query_vector, self.indexer.document_matrix).flatten()
 
         # Calcular el puntaje acumulado por cluster
-        cluster_scores = {i: 0 for i in range(len(self.clustered_documents))}
+        cluster_scores = {i: 0 for i in self.clustered_documents.keys()}
         for idx, cluster_id in enumerate(self.clusters):
-            cluster_scores[cluster_id] += similarities[idx]
+            if cluster_id != -1:  # Ignorar puntos de ruido
+                cluster_scores[cluster_id] += similarities[idx]
+
+        # Verificar si hay clusters válidos
+        if not cluster_scores:
+            raise ValueError(
+                "No se generaron clusters válidos. Verifica los parámetros de DBSCAN.")
 
         # Seleccionar el cluster más relevante
         best_cluster = max(cluster_scores, key=cluster_scores.get)
