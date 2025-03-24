@@ -1,7 +1,6 @@
 import os
 import re
 import streamlit as st
-import numpy as np
 from sklearn.cluster import KMeans
 from classes.document_indexer import DocumentIndexer
 from classes.pdf_processor import PDFProcessor
