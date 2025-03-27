@@ -26,13 +26,13 @@ if st.button("Procesar PDFs"):
 
 # Sección para realizar búsquedas
 st.header("Realizar una búsqueda")
-consulta = st.text_input("Introduce tu consulta:", "")
+request = st.text_input("Introduce tu consulta:", "")
 
 # Inicializar el estado de la sesión para resultados, opciones y selección
-if "resultados" not in st.session_state:
-    st.session_state["resultados"] = []
-if "opciones" not in st.session_state:
-    st.session_state["opciones"] = []
+if "results" not in st.session_state:
+    st.session_state["results"] = []
+if "options" not in st.session_state:
+    st.session_state["options"] = []
 if "selected_option" not in st.session_state:
     st.session_state["selected_option"] = "Selecciona un documento"
 if "vectorizer" not in st.session_state:
@@ -45,15 +45,15 @@ if "clusters" not in st.session_state:
     st.session_state["clusters"] = None
 if "clustered_documents" not in st.session_state:
     st.session_state["clustered_documents"] = {}
-if "recomendaciones" not in st.session_state:
-    st.session_state["recomendaciones"] = []
+if "recommendations" not in st.session_state:
+    st.session_state["recommendations"] = []
 if "recommended_docs" not in st.session_state:
     st.session_state["recommended_docs"] = []
 if "relevant_docs" not in st.session_state:
     st.session_state["relevant_docs"] = []
 
 if st.button("Buscar"):
-    if consulta.strip():
+    if request.strip():
         # Procesar e indexar los documentos antes de buscar
         st.write("Procesando e indexando documentos...")
         facade.add_documents()
@@ -65,9 +65,9 @@ if st.button("Buscar"):
         st.success("Clusters generados con éxito.")
 
         # Realizar la búsqueda
-        resultados = facade.search_documents(consulta)
+        results = facade.search_documents(request)
         # Guardar resultados en el estado de la sesión
-        st.session_state["resultados"] = resultados
+        st.session_state["results"] = results
         # Guardar los clusters en el estado de la sesión
         st.session_state["clusters"] = facade.clusters
         st.session_state["clustered_documents"] = facade.clustered_documents
@@ -76,24 +76,24 @@ if st.button("Buscar"):
         st.session_state["selected_option"] = "Selecciona un documento"
 
         # Crear una lista de opciones para el radio con relevancia y resumen
-        opciones = ["Selecciona un documento"] + [
+        options = ["Selecciona un documento"] + [
             f"Documento {i+1}: Relevancia {score:.4f} - {doc[:100]}..."
-            for i, (doc, score) in enumerate(resultados)
+            for i, (doc, score) in enumerate(results)
         ]
         # Guardar opciones en el estado de la sesión
-        st.session_state["opciones"] = opciones
+        st.session_state["options"] = options
 
         # Mostrar los resultados
-        st.subheader(f"Resultados para la consulta: '{consulta}'")
-        st.subheader(f"{len(resultados)} documentos encontrados.")
+        st.subheader(f"Resultados para la consulta: '{request}'")
+        st.subheader(f"{len(results)} documentos encontrados.")
 
 # Usar los resultados y opciones almacenados en el estado de la sesión
-if st.session_state["opciones"]:
+if st.session_state["options"]:
     # Permitir al usuario seleccionar un documento
     selected_option = st.radio(
         "Selecciona un documento para recomendar documentos:",
-        st.session_state["opciones"],
-        index=st.session_state["opciones"].index(
+        st.session_state["options"],
+        index=st.session_state["options"].index(
             st.session_state["selected_option"])
     )
 
@@ -103,9 +103,9 @@ if st.session_state["opciones"]:
     # Verificar si el usuario seleccionó un documento válido
     if selected_option != "Selecciona un documento":
         # Obtener el índice del documento seleccionado
-        selected_index = st.session_state["opciones"].index(
+        selected_index = st.session_state["options"].index(
             selected_option) - 1
-        selected_doc, selected_score = st.session_state["resultados"][selected_index]
+        selected_doc, selected_score = st.session_state["results"][selected_index]
 
         # Mostrar información del documento seleccionado
         st.success(f"Has seleccionado el documento {selected_index + 1}.")
@@ -118,14 +118,14 @@ if st.session_state["opciones"]:
             if "vectorizer" in st.session_state and "document_matrix" in st.session_state:
                 # Verificar si la matriz de documentos no está vacía
                 if st.session_state["document_matrix"].shape[0] > 0:
-                    recomendaciones = facade.recommend_similar_documents(
+                    recommendations = facade.recommend_similar_documents(
                         selected_doc)
                     # Guardar las recomendaciones en el estado de la sesión
-                    st.session_state["recomendaciones"] = recomendaciones
+                    st.session_state["recommendations"] = recommendations
 
                     st.subheader("Documentos similares:")
-                    if recomendaciones:
-                        for similar_doc, similarity_score in recomendaciones:
+                    if recommendations:
+                        for similar_doc, similarity_score in recommendations:
                             st.write(f"**Similitud:** {similarity_score:.4f}")
                             st.write(f"**Documento:** {similar_doc[:300]}...")
                             st.write("---")
@@ -141,14 +141,14 @@ if st.session_state["opciones"]:
         # Evaluar las recomendaciones
         if st.button("Evaluar recomendaciones"):
             # Verificar si hay recomendaciones disponibles
-            if "recomendaciones" in st.session_state:
-                recomendaciones = st.session_state["recomendaciones"]
+            if "recommendations" in st.session_state:
+                recommendations = st.session_state["recommendations"]
 
                 # Obtener los documentos procesados
                 processed_documents = st.session_state["processed_documents"]
 
                 # Consulta actual
-                query = consulta.lower()
+                query = request.lower()
 
                 # Definir documentos relevantes basados en reglas
                 relevant_docs = [
@@ -157,7 +157,7 @@ if st.session_state["opciones"]:
                 st.session_state["relevant_docs"] = relevant_docs
 
                 # Extraer solo los textos de los documentos recomendados
-                recommended_docs = [doc for doc, _ in recomendaciones]
+                recommended_docs = [doc for doc, _ in recommendations]
                 # Guardar en session_state
                 st.session_state["recommended_docs"] = recommended_docs
 
