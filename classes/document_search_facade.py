@@ -5,6 +5,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.metrics.pairwise import cosine_similarity
 from classes.document_indexer import DocumentIndexer
 from classes.pdf_processor import PDFProcessor
+from functions import process_text
 
 
 class DocumentSearchFacade:
@@ -15,8 +16,10 @@ class DocumentSearchFacade:
         self.indexer = DocumentIndexer()
         self.processed_documents = []
         self.clusters = None  # Para almacenar los clusters
-        self.eps = 0.8  # Radio de vecindad para DBSCAN
+        self.clusters_scores = []
+        self.eps = 0.835 # Radio de vecindad para DBSCAN
         self.min_samples = 2  # Número mínimo de puntos para formar un cluster
+        self.pdf_files = []
 
     def add_documents(self, processed_folder_path="./processed_files"):
         """
@@ -64,6 +67,8 @@ class DocumentSearchFacade:
                 "No hay documentos procesados para realizar clustering.")
 
         tfidf_matrix = self.indexer.document_matrix
+        
+        self.pdf_files = process_text.get_pdf_files()
 
         # Configurar y ajustar DBSCAN
         dbscan = DBSCAN(
@@ -72,14 +77,24 @@ class DocumentSearchFacade:
 
         # Asociar documentos a clusters
         self.clustered_documents = {}
+        self.clustered_pdfs = {}
+        self.pdf_titles = {}
         for idx, cluster_id in enumerate(self.clusters):
             if cluster_id == -1:
-                # Ignorar puntos etiquetados como ruido
+                # Ignorar puntos etiquetados como ruidodocument_vectors
                 continue
             if cluster_id not in self.clustered_documents:
                 self.clustered_documents[cluster_id] = []
             self.clustered_documents[cluster_id].append(
                 self.processed_documents[idx])
+            if cluster_id not in self.clustered_pdfs:
+                self.clustered_pdfs[cluster_id] = []
+            self.clustered_pdfs[cluster_id].append(
+                self.pdf_files[idx])
+            if cluster_id not in self.pdf_titles:
+                self.pdf_titles[cluster_id] = []
+            self.pdf_titles[cluster_id].append(
+               self.processor.extract_title(self.pdf_files[idx]))
 
         # Guardar los clusters en el estado de la sesión
         st.session_state["clusters"] = self.clusters
@@ -95,13 +110,19 @@ class DocumentSearchFacade:
         query_vector = self.indexer.vectorizer.transform([query])
         similarities = cosine_similarity(
             query_vector, self.indexer.document_matrix).flatten()
-
+        
         # Calcular el puntaje acumulado por cluster
         cluster_scores = {i: 0 for i in self.clustered_documents.keys()}
+        cluster_counts = {i: 0 for i in self.clustered_documents.keys()} 
         for idx, cluster_id in enumerate(self.clusters):
             if cluster_id != -1:  # Ignorar puntos de ruido
                 cluster_scores[cluster_id] += similarities[idx]
-
+                cluster_counts[cluster_id] += 1 # Contar documentos en cada cluster
+                
+        for cluster_id in cluster_scores.keys():
+            if cluster_counts[cluster_id] > 0:  # Evitar división por cero
+                cluster_scores[cluster_id] /= cluster_counts[cluster_id]
+                
         # Verificar si hay clusters válidos
         if not cluster_scores:
             raise ValueError(
@@ -109,11 +130,15 @@ class DocumentSearchFacade:
 
         # Seleccionar el cluster más relevante
         best_cluster = max(cluster_scores, key=cluster_scores.get)
-
+        
+        self.clusters_scores = cluster_scores
+    
         # Filtrar documentos del cluster más relevante
         cluster_docs = self.clustered_documents[best_cluster]
+        cluster_pdfs = self.clustered_pdfs[best_cluster]
+        cluster_titles = self.pdf_titles[best_cluster]
         cluster_vectors = self.indexer.document_matrix[self.clusters == best_cluster]
-
+        
         # Calcular similitud de coseno dentro del cluster
         cluster_similarities = cosine_similarity(
             query_vector, cluster_vectors).flatten()
@@ -121,7 +146,7 @@ class DocumentSearchFacade:
 
         # Filtrar resultados por umbral
         filtered_results = [
-            (cluster_docs[i], cluster_similarities[i])
+            (cluster_docs[i], cluster_similarities[i], cluster_pdfs[i], cluster_titles[i])
             for i in top_indices if cluster_similarities[i] >= threshold
         ]
 

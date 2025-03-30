@@ -43,6 +43,8 @@ if "processed_documents" not in st.session_state:
     st.session_state["processed_documents"] = []
 if "clusters" not in st.session_state:
     st.session_state["clusters"] = None
+if "clusters_scores" not in st.session_state:
+    st.session_state["clusters_scores"] = []
 if "clustered_documents" not in st.session_state:
     st.session_state["clustered_documents"] = {}
 if "recommendations" not in st.session_state:
@@ -66,19 +68,21 @@ if st.button("Buscar"):
 
         # Realizar la búsqueda
         results = facade.search_documents(request)
+        
         # Guardar resultados en el estado de la sesión
         st.session_state["results"] = results
         # Guardar los clusters en el estado de la sesión
         st.session_state["clusters"] = facade.clusters
         st.session_state["clustered_documents"] = facade.clustered_documents
+        st.session_state["clusters_scores"] = facade.clusters_scores
 
         # Restablecer la selección actual
         st.session_state["selected_option"] = "Selecciona un documento"
 
         # Crear una lista de opciones para el radio con relevancia y resumen
         options = ["Selecciona un documento"] + [
-            f"Documento {i+1}: Relevancia {score:.4f} - {doc[:100]}..."
-            for i, (doc, score) in enumerate(results)
+            f"Documento {i+1}: Relevancia {score:.4f}"
+            for i, (doc,score, pdf, title) in enumerate(results)
         ]
         # Guardar opciones en el estado de la sesión
         st.session_state["options"] = options
@@ -93,20 +97,29 @@ if st.session_state["options"]:
     selected_option = st.radio(
         "Selecciona un documento para recomendar documentos:",
         st.session_state["options"],
-        index=st.session_state["options"].index(
-            st.session_state["selected_option"])
     )
 
     # Guardar la selección en el estado de la sesión
     st.session_state["selected_option"] = selected_option
-
+   
     # Verificar si el usuario seleccionó un documento válido
     if selected_option != "Selecciona un documento":
         # Obtener el índice del documento seleccionado
         selected_index = st.session_state["options"].index(
             selected_option) - 1
-        selected_doc, selected_score = st.session_state["results"][selected_index]
-
+        selected_doc, selected_score, selected_pdf, selected_title = st.session_state["results"][selected_index]
+        
+        st.write(f"📄 {selected_title}")
+        
+        # Boton para descargar el PDF
+        with open(selected_pdf, "rb") as file:
+            pdf_bytes = file.read()
+            st.download_button(
+                label="📥 Descargar PDF",
+                data=pdf_bytes,
+                file_name=selected_pdf,
+                mime="application/pdf"
+            )
         # Mostrar información del documento seleccionado
         st.success(f"Has seleccionado el documento {selected_index + 1}.")
         st.write(f"**Relevancia:** {selected_score:.4f}")

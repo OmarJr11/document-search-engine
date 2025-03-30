@@ -49,3 +49,38 @@ class PDFProcessor:
     def preprocess_text(self, text):
         doc = self.nlp(text.lower())
         return " ".join([token.lemma_ for token in doc if not token.is_stop and not token.is_punct])
+    
+    def extract_title(self, pdf_path):
+        """Extrae el título del documento PDF analizando la primera página."""
+        doc = fitz.open(pdf_path)
+        
+        if len(doc) == 0:
+            return "Título no disponible"
+
+        first_page = doc[0]
+        blocks = first_page.get_text("blocks")  # Extrae bloques de texto
+
+        if not blocks:
+            return "Título no disponible"
+
+        # Ordenar los bloques por coordenadas: primero por Y (posición vertical), luego por X
+        blocks = sorted(blocks, key=lambda x: (x[1], x[0]))  
+
+        # Unir los primeros bloques de texto que forman el título
+        title_lines = []
+        last_y = None
+        for block in blocks:
+            text = block[4].strip()
+            y_position = block[1]  # Posición vertical
+            
+            if last_y is None or abs(y_position - last_y) < 20:  # 20px de margen
+                title_lines.append(text)
+            else:
+                break  # Terminar cuando cambie de bloque grande (asumimos fin del título)
+
+            last_y = y_position
+
+        # Unir líneas del título y asegurarse de que está en UTF-8
+        title = " ".join(title_lines)
+        
+        return title
