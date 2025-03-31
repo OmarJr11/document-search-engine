@@ -27,7 +27,8 @@ class DocumentSearchFacade:
     def add_documents(self, processed_folder_path="./processed_files"):
         """
         Obtiene todos los archivos .txt de la carpeta processed_files,
-        lee su contenido y los pasa a la función index_documents.
+        lee su contenido y generan una matriz de representación numérica
+        de los documentos mediante TF-IDF.
         """
         # Lista para almacenar el contenido de los documentos procesados
         self.processed_documents = []

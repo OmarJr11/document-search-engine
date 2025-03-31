@@ -7,13 +7,18 @@ import spacy
 
 
 class PDFProcessor:
-    """ Este método inicializa la clase cargando el modelo de lenguaje en español (es_core_news_sm) de spaCy. Este modelo incluye herramientas para analizar texto en español, como lematización y detección de palabras vacías."""
+    """ Este método inicializa la clase cargando el modelo de lenguaje 
+    en español (es_core_news_sm) de spaCy. 
+    Este modelo incluye herramientas para analizar texto en español, como lematización 
+    y detección de palabras vacías."""
 
     def __init__(self):
         self.nlp = spacy.load("es_core_news_sm")
 
     """ 
-        Este método extrae el texto de un archivo PDF utilizando la biblioteca PyMuPDF (fitz). Abre el PDF, lee cada página y concatena el texto extraído en una sola cadena. Finalmente, devuelve el texto completo del PDF. 
+        Este método extrae el texto de un archivo PDF utilizando la biblioteca PyMuPDF (fitz). 
+        Abre el PDF, lee cada página y concatena el texto extraído en una sola cadena. 
+        Finalmente, devuelve el texto completo del PDF. 
     """
     # Entrada:
     # Recibe la ruta de un archivo PDF (pdf_path).
@@ -34,7 +39,8 @@ class PDFProcessor:
         return text.replace("\n", " ")
 
     """
-        Este método procesa el texto extraído del PDF. Convierte el texto a minúsculas, elimina las palabras vacías (stopwords) y aplica lematización para reducir las palabras a su forma base.
+        Este método procesa el texto extraído del PDF. Convierte el texto a minúsculas, 
+        elimina las palabras vacías (stopwords) y aplica lematización para reducir las palabras a su forma base.
     """
     # Entrada:
     # Recibe una cadena de texto (text).
