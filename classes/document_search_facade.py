@@ -17,10 +17,13 @@ class DocumentSearchFacade:
         self.processed_documents = []
         self.clusters = None  # Para almacenar los clusters
         self.clusters_scores = []
+        self.pdf_files = []
+        self.pdf_titles = {}
+        
         self.eps = 0.816 # Radio de vecindad para DBSCAN
         self.min_samples = 2  # Número mínimo de puntos para formar un cluster
-        self.pdf_files = []
-
+   
+        
     def add_documents(self, processed_folder_path="./processed_files"):
         """
         Obtiene todos los archivos .txt de la carpeta processed_files,
@@ -153,47 +156,6 @@ class DocumentSearchFacade:
         ]
 
         return filtered_results
-
-    def generate_summary(self, document, query):
-        """
-        Genera un resumen completo del documento basado en la consulta.
-        Selecciona las oraciones más relevantes que contienen las palabras clave de la consulta.
-        """
-        # Dividir el documento en oraciones
-        sentences = re.split(r'(?<=[.!?]) +', document)
-
-        # Dividir la consulta en palabras clave
-        keywords = query.lower().split()
-
-        # Calcular la relevancia de cada oración
-        sentence_scores = []
-        for sentence in sentences:
-            score = sum(1 for word in keywords if word in sentence.lower())
-            if score > 0:
-                sentence_scores.append((sentence, score))
-
-        # Ordenar las oraciones por relevancia (puntaje)
-        sentence_scores = sorted(
-            sentence_scores, key=lambda x: x[1], reverse=True)
-
-        # Seleccionar las oraciones más relevantes
-        summary_sentences = [sentence for sentence, _ in sentence_scores]
-
-        # Construir el resumen completo
-        summary = " ".join(summary_sentences)
-
-        return (summary.strip())[:500]
-
-    def highlight_keywords(self, text, query, color="yellow"):
-        """
-        Resalta las palabras clave de la consulta en el texto con un color personalizado.
-        """
-        keywords = query.split()
-        for keyword in keywords:
-            # Usar HTML para resaltar las palabras clave con un color
-            text = re.sub(
-                f"(?i)({keyword})", rf"<span style='color: {color};'>\1</span>", text)
-        return text
 
     def recommend_similar_documents(self, selected_document, threshold=0.1):
         """

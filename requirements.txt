@@ -12,3 +12,6 @@ tqdm
 protobuf
 pydantic
 requests
+frontend
+fitz
+tools
