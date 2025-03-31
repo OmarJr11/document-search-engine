@@ -17,7 +17,7 @@ class DocumentSearchFacade:
         self.processed_documents = []
         self.clusters = None  # Para almacenar los clusters
         self.clusters_scores = []
-        self.eps = 0.835 # Radio de vecindad para DBSCAN
+        self.eps = 0.816 # Radio de vecindad para DBSCAN
         self.min_samples = 2  # Número mínimo de puntos para formar un cluster
         self.pdf_files = []
 
@@ -79,8 +79,10 @@ class DocumentSearchFacade:
         self.clustered_documents = {}
         self.clustered_pdfs = {}
         self.pdf_titles = {}
+        null_docs = 0
         for idx, cluster_id in enumerate(self.clusters):
             if cluster_id == -1:
+                null_docs += 1  # Contar documentos de ruido
                 # Ignorar puntos etiquetados como ruidodocument_vectors
                 continue
             if cluster_id not in self.clustered_documents:
@@ -95,7 +97,7 @@ class DocumentSearchFacade:
                 self.pdf_titles[cluster_id] = []
             self.pdf_titles[cluster_id].append(
                self.processor.extract_title(self.pdf_files[idx]))
-
+        
         # Guardar los clusters en el estado de la sesión
         st.session_state["clusters"] = self.clusters
         st.session_state["clustered_documents"] = self.clustered_documents
@@ -132,7 +134,7 @@ class DocumentSearchFacade:
         best_cluster = max(cluster_scores, key=cluster_scores.get)
         
         self.clusters_scores = cluster_scores
-    
+        
         # Filtrar documentos del cluster más relevante
         cluster_docs = self.clustered_documents[best_cluster]
         cluster_pdfs = self.clustered_pdfs[best_cluster]
@@ -207,6 +209,7 @@ class DocumentSearchFacade:
         vectorizer = st.session_state["vectorizer"]
         document_matrix = st.session_state["document_matrix"]
         processed_documents = st.session_state["processed_documents"]
+        pdf_files = process_text.get_pdf_files()
 
         # Vectorizar el documento seleccionado
         selected_vector = vectorizer.transform([selected_document])
@@ -220,7 +223,7 @@ class DocumentSearchFacade:
 
         # Excluir el documento seleccionado y filtrar por umbral
         similar_documents = [
-            (processed_documents[i], similarities[i])
+            (processed_documents[i], similarities[i], pdf_files[i])
             for i in similar_indices
             if processed_documents[i] != selected_document and similarities[i] >= threshold
         ]

@@ -48,7 +48,7 @@ class PDFProcessor:
 
     def preprocess_text(self, text):
         doc = self.nlp(text.lower())
-        return " ".join([token.lemma_ for token in doc if not token.is_stop and not token.is_punct])
+        return " ".join([token.lemma_ for token in doc if not token.is_stop and token.is_alpha])
     
     def extract_title(self, pdf_path):
         """Extrae el título del documento PDF analizando la primera página."""

@@ -98,10 +98,15 @@ if st.session_state["options"]:
         "Selecciona un documento para recomendar documentos:",
         st.session_state["options"],
     )
+    
+    if selected_option != st.session_state["selected_option"]:
+        # Limpia las recomendaciones
+        st.session_state["recommendations"] = []
 
     # Guardar la selección en el estado de la sesión
     st.session_state["selected_option"] = selected_option
-   
+    
+    
     # Verificar si el usuario seleccionó un documento válido
     if selected_option != "Selecciona un documento":
         # Obtener el índice del documento seleccionado
@@ -126,7 +131,7 @@ if st.session_state["options"]:
         st.write(f"**Documento:** {selected_doc[:300]}...")
 
         # Botón para buscar documentos similares
-        if st.button("Buscar documentos similares"):
+        if st.button("Buscar documentos similares") or st.session_state["recommendations"]:
             # Verificar si los datos necesarios están en el estado de la sesión
             if "vectorizer" in st.session_state and "document_matrix" in st.session_state:
                 # Verificar si la matriz de documentos no está vacía
@@ -138,9 +143,17 @@ if st.session_state["options"]:
 
                     st.subheader("Documentos similares:")
                     if recommendations:
-                        for similar_doc, similarity_score in recommendations:
+                        for similar_doc, similarity_score, similarity_pdf in recommendations:
                             st.write(f"**Similitud:** {similarity_score:.4f}")
                             st.write(f"**Documento:** {similar_doc[:300]}...")
+                            with open(similarity_pdf, "rb") as file:
+                                pdf_bytes = file.read()
+                                st.download_button(
+                                    label="📥 Descargar PDF",
+                                    data=pdf_bytes,
+                                    file_name=similarity_pdf,
+                                    mime="application/pdf"
+                                )
                             st.write("---")
                     else:
                         st.warning("No se encontraron documentos similares.")
@@ -168,9 +181,10 @@ if st.session_state["options"]:
                     doc for doc in processed_documents if query in doc.lower()]
                 # Guardar en session_state
                 st.session_state["relevant_docs"] = relevant_docs
-
+                
+                
                 # Extraer solo los textos de los documentos recomendados
-                recommended_docs = [doc for doc, _ in recommendations]
+                recommended_docs = [doc for doc, _, _ in recommendations]
                 # Guardar en session_state
                 st.session_state["recommended_docs"] = recommended_docs
 
@@ -205,7 +219,7 @@ st.header("Estadísticas de Clusters")
 if "clusters" in st.session_state and "clustered_documents" in st.session_state:
     clustered_documents = st.session_state["clustered_documents"]
     for cluster_id, docs in clustered_documents.items():
-        st.write(f"Cluster {cluster_id}: {len(docs)} documentos")
+        st.write(f"Cluster {cluster_id}: {len(docs)} documentos - Similitud promedio: {st.session_state['clusters_scores'][cluster_id]:.5f}")
 else:
     st.warning(
         "No se han generado clusters. Procesa e indexa los documentos primero."
