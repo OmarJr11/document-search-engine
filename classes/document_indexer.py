@@ -9,9 +9,3 @@ class DocumentIndexer:
         self.document_matrix = None
         self.documents = []
         self.documents_as_arrays = []
-
-    def index_documents(self, processed_texts):
-        """ Convierte los documentos en vectores TF-IDF """
-        self.documents_as_arrays = [doc.split() for doc in processed_texts]
-        self.documents = processed_texts
-        self.document_matrix = self.vectorizer.fit_transform(processed_texts)
